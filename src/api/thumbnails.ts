@@ -4,6 +4,7 @@ import { getVideo, getVideos, updateVideo } from "../db/videos";
 import type { ApiConfig } from "../config";
 import type { BunRequest } from "bun";
 import { BadRequestError, NotFoundError, UserForbiddenError } from "./errors";
+import { getAssetDiskPath, getAssetURL, mediaTypeToExt } from "./assets";
 
 export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
   const { videoId } = req.params as { videoId?: string };
@@ -33,7 +34,7 @@ export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
   const MAX_UPLOAD_SIZE = 10 << 20;
   if (file.size > MAX_UPLOAD_SIZE) {
     throw new BadRequestError(
-      "Thumbnail exceeds the maximum allowed size of 10MB",
+      "Thumbnail exceeds the maximum allowed size of 10MB"
     );
   }
 
@@ -47,10 +48,14 @@ export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
     throw new Error("Error reading file data");
   }
 
-  const base64Encoded = Buffer.from(fileData).toString("base64");
-  const base64DataURL = `data:${file.type};base64,${base64Encoded}`;
+  const ext = mediaTypeToExt(mediaType);
+  const filename = `${videoId}${ext}`;
+  console.log(filename);
 
-  video.thumbnailURL = base64DataURL;
+  const filePath = getAssetDiskPath(cfg, filename);
+  Bun.write(filePath, fileData);
+
+  video.thumbnailURL = getAssetURL(cfg, filename);
   updateVideo(cfg.db, video);
 
   return respondWithJSON(200, video);
