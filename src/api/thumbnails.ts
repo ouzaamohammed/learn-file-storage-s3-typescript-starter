@@ -47,7 +47,14 @@ export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
 
   console.log("uploading thumbnail for video", videoId, "by user", userID);
 
-  // TODO: implement the upload here
+  const video = getVideo(cfg.db, videoId);
+  if (!video) {
+    throw new NotFoundError("Video not found");
+  }
+  if (video.userID !== userID) {
+    throw new UserForbiddenError("Not authorized to update this video");
+  }
+
   const formData = await req.formData();
   const file = formData.get("thumbnail");
   if (!(file instanceof File)) {
@@ -56,17 +63,8 @@ export async function handlerUploadThumbnail(cfg: ApiConfig, req: BunRequest) {
 
   const MAX_UPLOAD_SIZE = 10 << 20;
   if (file.size > MAX_UPLOAD_SIZE) {
-    throw new BadRequestError("File should be 10MB or less");
-  }
-
-  const video = getVideo(cfg.db, videoId);
-  if (!video) {
-    throw new NotFoundError("Video not found");
-  }
-
-  if (video.userID !== userID) {
-    throw new UserForbiddenError(
-      "Cannot upload a thumbnail to a video you don't own",
+    throw new BadRequestError(
+      "Thumbnail exceeds the maximum allowed size of 10MB",
     );
   }
 
