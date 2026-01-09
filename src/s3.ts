@@ -1,9 +1,5 @@
 import type { ApiConfig } from "./config";
 
-export function getS3URL(cfg: ApiConfig, filename: string) {
-  return `https://${cfg.s3Bucket}.s3.${cfg.s3Region}.amazonaws.com/${filename}`;
-}
-
 export async function uploadVideoToS3(
   cfg: ApiConfig,
   key: string,
